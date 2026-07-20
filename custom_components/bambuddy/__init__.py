@@ -23,7 +23,16 @@ from .coordinator import BamBuddyInstanceCoordinator, BamBuddyPrinterCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR, Platform.BUTTON, Platform.SELECT, Platform.SWITCH, Platform.CAMERA, Platform.IMAGE]
+PLATFORMS = [
+    Platform.SENSOR,
+    Platform.BINARY_SENSOR,
+    Platform.BUTTON,
+    Platform.SELECT,
+    Platform.SWITCH,
+    Platform.NUMBER,
+    Platform.CAMERA,
+    Platform.IMAGE,
+]
 
 
 async def _async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
