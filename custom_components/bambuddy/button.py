@@ -1,6 +1,8 @@
 """BamBuddy buttons."""
 from __future__ import annotations
 
+import logging
+
 from homeassistant.components.button import ButtonEntity, ButtonEntityDescription
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -11,13 +13,20 @@ from .api import BamBuddyClient
 from .const import DOMAIN
 from .entity import BamBuddyPrinterEntityMixin
 
+_LOGGER = logging.getLogger(__name__)
+
 PRINTER_BUTTONS: list[ButtonEntityDescription] = [
+    # Print Control
     ButtonEntityDescription(key="pause", name="Pause Print", icon="mdi:pause", entity_category=EntityCategory.CONFIG),
     ButtonEntityDescription(key="resume", name="Resume Print", icon="mdi:play", entity_category=EntityCategory.CONFIG),
     ButtonEntityDescription(key="stop", name="Stop Print", icon="mdi:stop", entity_category=EntityCategory.CONFIG),
-    ButtonEntityDescription(key="clear_hms", name="Clear HMS Errors", icon="mdi:alert-circle-check", entity_category=EntityCategory.DIAGNOSTIC),
+    # Maintenance & Calibration
     ButtonEntityDescription(key="clear_plate", name="Clear Plate", icon="mdi:tray-remove"),
-    ButtonEntityDescription(key="refresh_status", name="Refresh Status", icon="mdi:refresh"),
+    ButtonEntityDescription(key="nozzle_calibration", name="Start Nozzle Calibration", icon="mdi:target", entity_category=EntityCategory.CONFIG),
+    ButtonEntityDescription(key="auto_bed_leveling", name="Start Auto Bed Leveling", icon="mdi:level", entity_category=EntityCategory.CONFIG),
+    # Diagnostic
+    ButtonEntityDescription(key="clear_hms", name="Clear HMS Errors", icon="mdi:alert-circle-check", entity_category=EntityCategory.DIAGNOSTIC),
+    ButtonEntityDescription(key="refresh_status", name="Refresh Status", icon="mdi:refresh", entity_category=EntityCategory.DIAGNOSTIC),
 ]
 
 
@@ -61,18 +70,25 @@ class BamBuddyPrinterButton(BamBuddyPrinterEntityMixin, ButtonEntity):
     async def async_press(self) -> None:
         printer_id = self._printer_data["printer_id"]
         key = self.entity_description.key
-        if key == "pause":
-            await self._client.pause_print(printer_id)
-        elif key == "resume":
-            await self._client.resume_print(printer_id)
-        elif key == "stop":
-            await self._client.stop_print(printer_id)
-        elif key == "clear_hms":
-            await self._client.clear_hms_errors(printer_id)
-        elif key == "clear_plate":
-            await self._client.clear_plate(printer_id)
-        elif key == "refresh_status":
-            await self._client.refresh_printer_status(printer_id)
+        try:
+            if key == "pause":
+                await self._client.pause_print(printer_id)
+            elif key == "resume":
+                await self._client.resume_print(printer_id)
+            elif key == "stop":
+                await self._client.stop_print(printer_id)
+            elif key == "clear_hms":
+                await self._client.clear_hms_errors(printer_id)
+            elif key == "clear_plate":
+                await self._client.clear_plate(printer_id)
+            elif key == "refresh_status":
+                await self._client.refresh_printer_status(printer_id)
+            elif key == "nozzle_calibration":
+                await self._client.start_nozzle_calibration(printer_id)
+            elif key == "auto_bed_leveling":
+                await self._client.start_auto_bed_leveling(printer_id)
+        except Exception as err:
+            _LOGGER.error("Error pressing button %s: %s", key, err)
 
         coordinator = self.hass.data[DOMAIN][self._entry.entry_id]["printers"][self._printer_data["printer_id"]]["coordinator"]
         await coordinator.async_request_refresh()
