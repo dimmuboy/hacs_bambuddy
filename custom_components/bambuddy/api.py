@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 import aiohttp
 import asyncio
+import json
 from typing import Any
 
 _LOGGER = logging.getLogger(__name__)
@@ -111,11 +112,60 @@ class BamBuddyClient:
     async def get_statistics(self) -> dict:
         return await self._request("GET", "/archives/stats")
 
+    # ── Lighting ───────────────────────────────────────────────────────
+
     # Chamber light
     async def set_chamber_light(self, printer_id: int, on: bool) -> dict:
         return await self._request("POST", f"/printers/{printer_id}/chamber-light", params={"on": on})
 
-    # Camera
+    # Work light
+    async def set_work_light(self, printer_id: int, on: bool) -> dict:
+        """Toggle work light on/off."""
+        return await self._request("POST", f"/printers/{printer_id}/work-light", params={"on": on})
+
+    # LED lights (general)
+    async def set_led_light(self, printer_id: int, on: bool) -> dict:
+        """Toggle LED light on/off."""
+        return await self._request("POST", f"/printers/{printer_id}/led-light", params={"on": on})
+
+    # ── Calibration & Leveling ────────────────────────────────────────
+
+    # Start nozzle calibration
+    async def start_nozzle_calibration(self, printer_id: int) -> dict:
+        """Start nozzle calibration procedure."""
+        return await self._request("POST", f"/printers/{printer_id}/calibration/nozzle-start")
+
+    # Start bed leveling
+    async def start_auto_bed_leveling(self, printer_id: int) -> dict:
+        """Start automatic bed leveling procedure."""
+        return await self._request("POST", f"/printers/{printer_id}/calibration/bed-leveling-start")
+
+    # ── Offsets ───────────────────────────────────────────────────────
+
+    # Set nozzle offset
+    async def set_nozzle_offset(self, printer_id: int, x: float = None, y: float = None, z: float = None) -> dict:
+        """Set nozzle offset (X, Y, Z in mm)."""
+        params = {}
+        if x is not None:
+            params["offset_x"] = x
+        if y is not None:
+            params["offset_y"] = y
+        if z is not None:
+            params["offset_z"] = z
+        return await self._request("POST", f"/printers/{printer_id}/offsets/nozzle", params=params)
+
+    # Set bed offset
+    async def set_bed_offset(self, printer_id: int, x: float = None, y: float = None) -> dict:
+        """Set bed offset (X, Y in mm)."""
+        params = {}
+        if x is not None:
+            params["offset_x"] = x
+        if y is not None:
+            params["offset_y"] = y
+        return await self._request("POST", f"/printers/{printer_id}/offsets/bed", params=params)
+
+    # ── Camera ─────────────────────────────────────────────────────────
+
     async def get_stream_token(self) -> str:
         result = await self._request("POST", "/printers/camera/stream-token")
         _LOGGER.debug("Stream token response: %s", result)
@@ -127,4 +177,3 @@ class BamBuddyClient:
 
     def stream_url(self, printer_id: int, token: str, fps: int = 5) -> str:
         return f"{self._base_url}/printers/{printer_id}/camera/stream?token={token}&fps={fps}"
-
