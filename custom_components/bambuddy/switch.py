@@ -21,10 +21,14 @@ async def async_setup_entry(
 ) -> None:
     """Set up BamBuddy switch entities."""
     data = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities(
-        BamBuddyChamberLightSwitch(printer_data["coordinator"], data["client"], printer_data, entry)
-        for printer_data in data["printers"].values()
-    )
+    entities = []
+    for printer_data in data["printers"].values():
+        entities.extend([
+            BamBuddyChamberLightSwitch(printer_data["coordinator"], data["client"], printer_data, entry),
+            BamBuddyWorkLightSwitch(printer_data["coordinator"], data["client"], printer_data, entry),
+            BamBuddyLEDLightSwitch(printer_data["coordinator"], data["client"], printer_data, entry),
+        ])
+    async_add_entities(entities)
 
 
 class BamBuddyChamberLightSwitch(BamBuddyPrinterEntityMixin, CoordinatorEntity, SwitchEntity):
@@ -60,4 +64,76 @@ class BamBuddyChamberLightSwitch(BamBuddyPrinterEntityMixin, CoordinatorEntity, 
 
     async def async_turn_off(self, **kwargs) -> None:
         await self._client.set_chamber_light(self._printer_data["printer_id"], False)
+        await self.coordinator.async_request_refresh()
+
+
+class BamBuddyWorkLightSwitch(BamBuddyPrinterEntityMixin, CoordinatorEntity, SwitchEntity):
+    """Switch for the printer work light."""
+
+    _attr_name = "Work Light"
+    _attr_icon = "mdi:flashlight"
+
+    def __init__(
+        self,
+        coordinator,
+        client: BamBuddyClient,
+        printer_data: dict,
+        entry: ConfigEntry,
+    ) -> None:
+        super().__init__(coordinator)
+        self._client = client
+        self._printer_data = printer_data
+        self._entry_id = entry.entry_id
+        self._instance_url = f"http://{entry.data.get('host')}:{entry.data.get('port', 8000)}"
+        self._attr_unique_id = f"{entry.entry_id}_p{printer_data['printer_id']}_work_light"
+
+    @property
+    def is_on(self) -> bool | None:
+        data = self.coordinator.data
+        if not data:
+            return None
+        return data.get("status", {}).get("work_light")
+
+    async def async_turn_on(self, **kwargs) -> None:
+        await self._client.set_work_light(self._printer_data["printer_id"], True)
+        await self.coordinator.async_request_refresh()
+
+    async def async_turn_off(self, **kwargs) -> None:
+        await self._client.set_work_light(self._printer_data["printer_id"], False)
+        await self.coordinator.async_request_refresh()
+
+
+class BamBuddyLEDLightSwitch(BamBuddyPrinterEntityMixin, CoordinatorEntity, SwitchEntity):
+    """Switch for the printer LED light."""
+
+    _attr_name = "LED Light"
+    _attr_icon = "mdi:led-on"
+
+    def __init__(
+        self,
+        coordinator,
+        client: BamBuddyClient,
+        printer_data: dict,
+        entry: ConfigEntry,
+    ) -> None:
+        super().__init__(coordinator)
+        self._client = client
+        self._printer_data = printer_data
+        self._entry_id = entry.entry_id
+        self._instance_url = f"http://{entry.data.get('host')}:{entry.data.get('port', 8000)}"
+        self._attr_unique_id = f"{entry.entry_id}_p{printer_data['printer_id']}_led_light"
+
+    @property
+    def is_on(self) -> bool | None:
+        data = self.coordinator.data
+        if not data:
+            return None
+        return data.get("status", {}).get("led_light")
+
+    async def async_turn_on(self, **kwargs) -> None:
+        await self._client.set_led_light(self._printer_data["printer_id"], True)
+        await self.coordinator.async_request_refresh()
+
+    async def async_turn_off(self, **kwargs) -> None:
+        await self._client.set_led_light(self._printer_data["printer_id"], False)
         await self.coordinator.async_request_refresh()
