@@ -133,12 +133,12 @@ class BamBuddyClient:
     # Start nozzle calibration
     async def start_nozzle_calibration(self, printer_id: int) -> dict:
         """Start nozzle calibration procedure."""
-        return await self._request("POST", f"/printers/{printer_id}/calibration/nozzle-start")
+        return await self._request("POST", f"/printers/{printer_id}/calibration", params={"nozzle_offset": True})
 
     # Start bed leveling
     async def start_auto_bed_leveling(self, printer_id: int) -> dict:
         """Start automatic bed leveling procedure."""
-        return await self._request("POST", f"/printers/{printer_id}/calibration/bed-leveling-start")
+        return await self._request("POST", f"/printers/{printer_id}/calibration", params={"bed_leveling": True})
 
     # ── Offsets ───────────────────────────────────────────────────────
 
