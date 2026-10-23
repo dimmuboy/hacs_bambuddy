@@ -85,7 +85,7 @@ async def async_setup_entry(
         status_data = (coordinator.data or {}).get("status", {})
         for description in PRINTER_SENSORS:
             if description.key == "chamber_temp":
-                if status_data.get("temperatures", {}).get("chamber") is None:
+                if (status_data.get("temperatures") or {}).get("chamber") is None:
                     continue
             entities.append(BamBuddyPrinterSensor(coordinator, entry, printer_data, description))
 
@@ -177,7 +177,7 @@ class BamBuddyPrinterSensor(BamBuddyPrinterEntityMixin, CoordinatorEntity, Senso
         if key == "status":
             return status.get("state") or printer.get("status")
         if key == "current_print":
-            return status.get("current_print") or status.get("subtask_name")
+            return (status.get("current_print") if isinstance(status.get("current_print"), str) else None) or status.get("subtask_name")
         if key == "progress":
             return status.get("progress")
         if key == "remaining_time":
@@ -189,7 +189,7 @@ class BamBuddyPrinterSensor(BamBuddyPrinterEntityMixin, CoordinatorEntity, Senso
         if key == "total_layers":
             return status.get("total_layers")
         if key == "nozzle_temp":
-            return status.get("temperatures", {}).get("nozzle")
+            return (status.get("temperatures") or {}).get("nozzle")
         if key == "nozzle_target":
             return status.get("temperatures", {}).get("nozzle_target")
         if key == "bed_temp":
@@ -199,7 +199,8 @@ class BamBuddyPrinterSensor(BamBuddyPrinterEntityMixin, CoordinatorEntity, Senso
         if key == "chamber_temp":
             return status.get("temperatures", {}).get("chamber")
         if key == "hms_status":
-            return status.get("hms_status")
+            errors = status.get("hms_errors") or []
+            return f"{len(errors)} error(s)" if errors else "OK"
         if key == "subtask_name":
             return status.get("subtask_name")
         if key == "gcode_file":

@@ -5,9 +5,10 @@ import logging
 from datetime import timedelta
 
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .api import BamBuddyClient, BamBuddyApiError
+from .api import BamBuddyClient, BamBuddyApiError, BamBuddyAuthError
 from .const import DEFAULT_SCAN_INTERVAL, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
@@ -38,6 +39,8 @@ class BamBuddyInstanceCoordinator(DataUpdateCoordinator):
                 "system_info": system_info,
                 "statistics": statistics,
             }
+        except BamBuddyAuthError as err:
+            raise ConfigEntryAuthFailed("BamBuddy API key rejected") from err
         except BamBuddyApiError as err:
             raise UpdateFailed(f"Error fetching BamBuddy data: {err}") from err
 
@@ -65,5 +68,7 @@ class BamBuddyPrinterCoordinator(DataUpdateCoordinator):
                 "printer": printer,
                 "status": status,
             }
+        except BamBuddyAuthError as err:
+            raise ConfigEntryAuthFailed("BamBuddy API key rejected") from err
         except BamBuddyApiError as err:
             raise UpdateFailed(f"Error fetching printer data: {err}") from err

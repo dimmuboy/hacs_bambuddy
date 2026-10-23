@@ -41,6 +41,16 @@ PRINTER_BINARY_SENSORS: list[BinarySensorEntityDescription] = [
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
     BinarySensorEntityDescription(
+        key="door_open",
+        name="Door Open",
+        device_class=BinarySensorDeviceClass.DOOR,
+    ),
+    BinarySensorEntityDescription(
+        key="awaiting_plate_clear",
+        name="Awaiting Plate Clear",
+        icon="mdi:tray-alert",
+    ),
+    BinarySensorEntityDescription(
         key="developer_mode",
         name="Developer Mode",
         icon="mdi:code-braces",
@@ -96,6 +106,10 @@ class BamBuddyPrinterBinarySensor(BamBuddyPrinterEntityMixin, CoordinatorEntity,
             return len(errors) > 0 if isinstance(errors, list) else bool(errors)
         if key == "wired_network":
             return status.get("wired_network")
+        if key == "door_open":
+            return status.get("door_open")
+        if key == "awaiting_plate_clear":
+            return status.get("awaiting_plate_clear")
         if key == "developer_mode":
             return status.get("developer_mode")
         return None
