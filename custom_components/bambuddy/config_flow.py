@@ -36,6 +36,43 @@ class BamBuddyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Return the options flow."""
         return BamBuddyOptionsFlow(config_entry)
 
+    async def async_step_reauth(self, entry_data: dict[str, Any]) -> FlowResult:
+        """Reauthenticate an existing instance without replacing its config entry."""
+        self._reauth_entry = self.hass.config_entries.async_get_entry(
+            self.context["entry_id"]
+        )
+        return await self.async_step_reauth_confirm()
+
+    async def async_step_reauth_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Validate a replacement API key and preserve existing entity IDs."""
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            entry = self._reauth_entry
+            client = BamBuddyClient(
+                entry.data[CONF_HOST],
+                entry.data[CONF_PORT],
+                user_input[CONF_API_KEY],
+                async_get_clientsession(self.hass),
+            )
+            try:
+                await client.get_system_info()
+            except BamBuddyAuthError:
+                errors["base"] = "invalid_auth"
+            except BamBuddyApiError:
+                errors["base"] = "cannot_connect"
+            else:
+                return self.async_update_reload_and_abort(
+                    entry,
+                    data_updates={CONF_API_KEY: user_input[CONF_API_KEY]},
+                )
+        return self.async_show_form(
+            step_id="reauth_confirm",
+            data_schema=vol.Schema({vol.Required(CONF_API_KEY): str}),
+            errors=errors,
+        )
+
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Add a BamBuddy instance."""
         errors: dict[str, str] = {}
@@ -86,10 +123,41 @@ class BamBuddyOptionsFlow(config_entries.OptionsFlow):
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Show menu."""
-        menu_options = ["add_printer"]
+        menu_options = ["add_printer", "update_api_key"]
         if self._printers:
             menu_options.append("remove_printer")
         return self.async_show_menu(step_id="init", menu_options=menu_options)
+
+    async def async_step_update_api_key(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Replace the API key without removing the entry or printer devices."""
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            client = BamBuddyClient(
+                self._entry.data[CONF_HOST],
+                self._entry.data[CONF_PORT],
+                user_input[CONF_API_KEY],
+                async_get_clientsession(self.hass),
+            )
+            try:
+                await client.get_system_info()
+            except BamBuddyAuthError:
+                errors["base"] = "invalid_auth"
+            except BamBuddyApiError:
+                errors["base"] = "cannot_connect"
+            else:
+                self.hass.config_entries.async_update_entry(
+                    self._entry,
+                    data={**self._entry.data, CONF_API_KEY: user_input[CONF_API_KEY]},
+                )
+                return self.async_create_entry(title="", data=self._entry.options)
+
+        return self.async_show_form(
+            step_id="update_api_key",
+            data_schema=vol.Schema({vol.Required(CONF_API_KEY): str}),
+            errors=errors,
+        )
 
     # ── Add printer ────────────────────────────────────────────────────────
 
