@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 
 from homeassistant.components.number import NumberEntity, NumberEntityDescription
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
@@ -102,6 +103,11 @@ class BamBuddyPrinterNumber(BamBuddyPrinterEntityMixin, CoordinatorEntity, Numbe
         self._attr_unique_id = f"{entry.entry_id}_p{printer_data['printer_id']}_{description.key}"
 
     @property
+    def available(self) -> bool:
+        """Offset setters are not supported by the current Bambuddy API."""
+        return False
+
+    @property
     def native_value(self) -> float | None:
         """Return current offset value."""
         data = self._coordinator_data()
@@ -122,22 +128,5 @@ class BamBuddyPrinterNumber(BamBuddyPrinterEntityMixin, CoordinatorEntity, Numbe
         return None
 
     async def async_set_native_value(self, value: float) -> None:
-        """Set the offset value."""
-        printer_id = self._printer_data["printer_id"]
-        key = self.entity_description.key
-
-        try:
-            if key == "nozzle_offset_x":
-                await self._client.set_nozzle_offset(printer_id, x=value)
-            elif key == "nozzle_offset_y":
-                await self._client.set_nozzle_offset(printer_id, y=value)
-            elif key == "nozzle_offset_z":
-                await self._client.set_nozzle_offset(printer_id, z=value)
-            elif key == "bed_offset_x":
-                await self._client.set_bed_offset(printer_id, x=value)
-            elif key == "bed_offset_y":
-                await self._client.set_bed_offset(printer_id, y=value)
-
-            await self.coordinator.async_request_refresh()
-        except Exception as err:
-            _LOGGER.error("Error setting offset %s: %s", key, err)
+        """Do not issue calls to endpoints removed from Bambuddy."""
+        raise HomeAssistantError("Offset controls are not supported by the current Bambuddy API")
