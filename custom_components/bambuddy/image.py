@@ -37,7 +37,7 @@ class BamBuddyCoverImage(BamBuddyPrinterEntityMixin, CoordinatorEntity, ImageEnt
     """Cover image of the current print job."""
 
     _attr_name = "Cover"
-    _attr_content_type = "image/jpeg"
+    _attr_content_type = "image/png"
 
     def __init__(
         self,
