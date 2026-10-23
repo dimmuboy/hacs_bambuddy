@@ -8,6 +8,13 @@
           "port": "Port",
           "api_key": "API Key"
         }
+      },
+      "reauth_confirm": {
+        "title": "Reconnect BamBuddy",
+        "description": "Enter a new BamBuddy API key. Existing devices and entities will be kept.",
+        "data": {
+          "api_key": "New API Key"
+        }
       }
     },
     "error": {
@@ -28,7 +35,8 @@
       "init": {
         "menu_options": {
           "add_printer": "Add Printer",
-          "remove_printer": "Remove Printer"
+          "remove_printer": "Remove Printer",
+          "update_api_key": "Update API Key"
         }
       },
       "add_printer": {
@@ -43,10 +51,18 @@
         "data": {
           "printer_id": "Printer"
         }
+      },
+      "update_api_key": {
+        "title": "Update API Key",
+        "description": "Replace the expired key without removing any printers or entities.",
+        "data": {
+          "api_key": "New API Key"
+        }
       }
     },
     "error": {
-      "cannot_connect": "Cannot connect to BamBuddy."
+      "cannot_connect": "Cannot connect to BamBuddy.",
+      "invalid_auth": "Invalid or expired API key."
     },
     "abort": {
       "cannot_connect": "Cannot connect to BamBuddy.",
