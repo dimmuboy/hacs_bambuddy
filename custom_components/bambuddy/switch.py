@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 
 from homeassistant.components.switch import SwitchEntity
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -88,6 +89,11 @@ class BamBuddyWorkLightSwitch(BamBuddyPrinterEntityMixin, CoordinatorEntity, Swi
         self._attr_unique_id = f"{entry.entry_id}_p{printer_data['printer_id']}_work_light"
 
     @property
+    def available(self) -> bool:
+        """No matching control/status API exists in current Bambuddy."""
+        return False
+
+    @property
     def is_on(self) -> bool | None:
         data = self.coordinator.data
         if not data:
@@ -95,12 +101,10 @@ class BamBuddyWorkLightSwitch(BamBuddyPrinterEntityMixin, CoordinatorEntity, Swi
         return data.get("status", {}).get("work_light")
 
     async def async_turn_on(self, **kwargs) -> None:
-        await self._client.set_work_light(self._printer_data["printer_id"], True)
-        await self.coordinator.async_request_refresh()
+        raise HomeAssistantError("This light is not exposed by the Bambuddy API")
 
     async def async_turn_off(self, **kwargs) -> None:
-        await self._client.set_work_light(self._printer_data["printer_id"], False)
-        await self.coordinator.async_request_refresh()
+        raise HomeAssistantError("This light is not exposed by the Bambuddy API")
 
 
 class BamBuddyLEDLightSwitch(BamBuddyPrinterEntityMixin, CoordinatorEntity, SwitchEntity):
@@ -124,6 +128,11 @@ class BamBuddyLEDLightSwitch(BamBuddyPrinterEntityMixin, CoordinatorEntity, Swit
         self._attr_unique_id = f"{entry.entry_id}_p{printer_data['printer_id']}_led_light"
 
     @property
+    def available(self) -> bool:
+        """No matching control/status API exists in current Bambuddy."""
+        return False
+
+    @property
     def is_on(self) -> bool | None:
         data = self.coordinator.data
         if not data:
@@ -131,9 +140,7 @@ class BamBuddyLEDLightSwitch(BamBuddyPrinterEntityMixin, CoordinatorEntity, Swit
         return data.get("status", {}).get("led_light")
 
     async def async_turn_on(self, **kwargs) -> None:
-        await self._client.set_led_light(self._printer_data["printer_id"], True)
-        await self.coordinator.async_request_refresh()
+        raise HomeAssistantError("This light is not exposed by the Bambuddy API")
 
     async def async_turn_off(self, **kwargs) -> None:
-        await self._client.set_led_light(self._printer_data["printer_id"], False)
-        await self.coordinator.async_request_refresh()
+        raise HomeAssistantError("This light is not exposed by the Bambuddy API")
