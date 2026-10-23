@@ -7,6 +7,7 @@ from homeassistant.components.button import ButtonEntity, ButtonEntityDescriptio
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .api import BamBuddyClient
@@ -89,6 +90,7 @@ class BamBuddyPrinterButton(BamBuddyPrinterEntityMixin, ButtonEntity):
                 await self._client.start_auto_bed_leveling(printer_id)
         except Exception as err:
             _LOGGER.error("Error pressing button %s: %s", key, err)
+            raise HomeAssistantError(f"BamBuddy action {key} failed: {err}") from err
 
         coordinator = self.hass.data[DOMAIN][self._entry.entry_id]["printers"][self._printer_data["printer_id"]]["coordinator"]
         await coordinator.async_request_refresh()
